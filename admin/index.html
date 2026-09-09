@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>【示範版】管理後台｜宸信金融顧問</title>
+<link rel="icon" href="../assets/favicon-32.png" sizes="32x32">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0B213F;--navy-2:#12315C;--navy-deep:#061428;--gold:#C9A46A;--gold-lt:#F2DFB4;
+  --bg:#F4F6F9;--card:#fff;--line:#E2E7EE;--line-2:#EEF1F5;
+  --ink:#16202E;--ink-2:#5A6779;--ink-3:#8B97A8;
+  /* 狀態色（已用 CVD 驗證，顯示順序：已成交→已聯繫→未處理→無效） */
+  --s-closed:#1D7A45;--s-closed-bg:#E7F5ED;
+  --s-contacted:#1D5FA8;--s-contacted-bg:#E8F1FB;
+  --s-new:#B0740A;--s-new-bg:#FDF3E2;
+  --s-invalid:#6B7688;--s-invalid-bg:#EDF0F4;
+  --danger:#B03A2E;--danger-bg:#FCEDEB;
+  --bar:#1B4A86;                       /* 趨勢圖單一序列色 */
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC",serif;--r:12px;--side:236px;
+  --sh:0 1px 2px rgba(11,33,63,.04),0 8px 24px -12px rgba(11,33,63,.16);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0;line-height:1.4}
+.hide{display:none!important}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- 通用 ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border-radius:9px;
+  border:1px solid transparent;cursor:pointer;font-weight:500;letter-spacing:.04em;transition:.22s;white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-p{background:var(--navy);color:#fff}.btn-p:hover:not(:disabled){background:var(--navy-2)}
+.btn-g{background:linear-gradient(135deg,#D9B87C,#B8935A);color:#28190A}
+.btn-g:hover:not(:disabled){filter:brightness(1.06)}
+.btn-o{background:#fff;border-color:var(--line);color:var(--ink-2)}
+.btn-o:hover:not(:disabled){border-color:var(--navy);color:var(--navy)}
+.btn-d{background:#fff;border-color:#F0CFCA;color:var(--danger)}
+.btn-d:hover:not(:disabled){background:var(--danger-bg)}
+.btn-sm{padding:7px 13px;font-size:13px;border-radius:8px}
+.btn-block{width:100%;padding:14px}
+.f{margin-bottom:18px}
+.f label{display:block;font-size:13px;color:var(--ink-2);letter-spacing:.08em;margin-bottom:8px;font-weight:500}
+.f input,.f select,.f textarea{width:100%;padding:12px 14px;border:1px solid var(--line);
+  border-radius:10px;background:#FAFBFD;transition:.2s}
+.f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:var(--gold);background:#fff;
+  box-shadow:0 0 0 3px rgba(201,164,106,.18)}
+textarea{min-height:96px;resize:vertical;line-height:1.7}
+.msg{padding:11px 14px;border-radius:9px;font-size:13.5px;line-height:1.7;margin-bottom:16px;display:none}
+.msg.show{display:block}
+.msg.err{background:var(--danger-bg);color:#8E2C22;border:1px solid #F3D2CD}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+.pill{display:inline-block;padding:4px 11px;border-radius:99px;font-size:12px;font-weight:500;letter-spacing:.05em;white-space:nowrap}
+.p-new{background:var(--s-new-bg);color:var(--s-new)}
+.p-contacted{background:var(--s-contacted-bg);color:var(--s-contacted)}
+.p-closed{background:var(--s-closed-bg);color:var(--s-closed)}
+.p-invalid{background:var(--s-invalid-bg);color:var(--s-invalid)}
+
+/* ---------- 登入 ---------- */
+.login-wrap{min-height:100dvh;display:grid;place-items:center;padding:24px;
+  background:radial-gradient(120% 90% at 75% 5%,#173357,#0B213F 48%,#061428)}
+.login{width:100%;max-width:406px;background:var(--card);border-radius:18px;padding:44px 38px;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.6);border-top:3px solid var(--gold)}
+.login img{height:52px;margin:0 auto 22px;display:block}
+.login h1{font-size:21px;text-align:center;color:var(--navy)}
+.login .sub{text-align:center;color:var(--ink-3);font-size:13.5px;margin:8px 0 30px;letter-spacing:.05em}
+
+/* ---------- 側邊欄 ---------- */
+.shell{display:grid;grid-template-columns:var(--side) 1fr;min-height:100dvh}
+.side{background:var(--navy-deep);color:#fff;position:sticky;top:0;height:100dvh;
+  display:flex;flex-direction:column;border-right:1px solid rgba(201,164,106,.16);z-index:50}
+.side-brand{padding:22px 20px 20px;display:flex;align-items:center;gap:11px;
+  border-bottom:1px solid rgba(255,255,255,.08)}
+.side-brand img{height:32px;flex:none}
+.side-brand b{font-family:var(--serif);font-size:15.5px;font-weight:600;letter-spacing:.06em;line-height:1.3}
+.side-brand small{display:block;font-size:9.5px;letter-spacing:.34em;color:var(--gold);font-weight:400;margin-top:2px}
+.nav{padding:16px 12px;display:grid;gap:3px;flex:1;align-content:start}
+.nav-h{font-size:10.5px;letter-spacing:.24em;color:rgba(255,255,255,.32);padding:12px 12px 8px}
+.nav a{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;
+  color:rgba(255,255,255,.66);font-size:14.5px;letter-spacing:.05em;cursor:pointer;
+  transition:.22s;position:relative;border:1px solid transparent}
+.nav a:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav a.on{background:rgba(201,164,106,.14);color:var(--gold-lt);font-weight:500;
+  border-color:rgba(201,164,106,.28)}
+.nav a.on::before{content:"";position:absolute;left:-13px;top:50%;transform:translateY(-50%);
+  width:3px;height:20px;border-radius:0 3px 3px 0;background:var(--gold)}
+.nav svg{width:17px;height:17px;flex:none}
+.nav .badge{margin-left:auto;background:var(--gold);color:#28190A;font-size:11px;font-weight:700;
+  min-width:20px;height:20px;border-radius:99px;display:grid;place-items:center;padding:0 6px}
+.col{display:flex;flex-direction:column;min-width:0}
+.topbar{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(12px) saturate(1.4);
+  border-bottom:1px solid var(--line);height:64px;display:flex;align-items:center;gap:14px;padding:0 28px}
+.tb-title{font-family:var(--serif);font-size:19px;font-weight:600;color:var(--navy);letter-spacing:.04em}
+.tb-r{margin-left:auto;position:relative}
+.userbtn{display:flex;align-items:center;gap:10px;padding:5px 12px 5px 5px;border-radius:99px;
+  border:1px solid var(--line);background:#fff;cursor:pointer;transition:.22s}
+.userbtn:hover{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,164,106,.14)}
+.avatar{width:32px;height:32px;border-radius:50%;flex:none;display:grid;place-items:center;
+  line-height:1;text-indent:0;background:linear-gradient(140deg,#12315C,#0B213F);color:var(--gold-lt);
+  font-family:var(--serif);font-size:15px;font-weight:600}
+.ub-t{text-align:left;line-height:1.25;min-width:0}
+.ub-t b{display:block;font-size:13.5px;font-weight:500;color:var(--ink)}
+.ub-t span{display:block;font-size:11px;color:var(--ink-3);letter-spacing:.06em}
+.userbtn .caret{width:13px;height:13px;color:var(--ink-3);transition:transform .22s;flex:none}
+.userbtn[aria-expanded="true"] .caret{transform:rotate(180deg)}
+.umenu{position:absolute;right:0;top:calc(100% + 9px);min-width:212px;background:#fff;
+  border:1px solid var(--line);border-radius:12px;box-shadow:0 22px 50px -16px rgba(11,33,63,.32);
+  padding:7px;display:none;z-index:60}
+.umenu.show{display:block}
+.um-head{padding:11px 12px 12px;border-bottom:1px solid var(--line-2);margin-bottom:6px}
+.um-head b{display:block;font-size:14px;color:var(--navy)}
+.um-head span{display:block;font-size:12px;color:var(--ink-3);margin-top:2px}
+.umenu button{width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border:none;
+  background:none;border-radius:8px;cursor:pointer;font-size:14px;color:var(--ink-2);text-align:left;transition:.18s}
+.umenu button:hover{background:var(--bg);color:var(--navy)}
+.umenu button.danger{color:var(--danger)}
+.umenu button.danger:hover{background:var(--danger-bg)}
+.umenu button svg{width:15px;height:15px;flex:none}
+.side-note{padding:14px 20px;border-top:1px solid rgba(255,255,255,.08);
+  font-size:11px;color:rgba(255,255,255,.3);letter-spacing:.1em}
+.burger{display:none;background:none;border:none;color:var(--navy);cursor:pointer;padding:6px;gap:4px}
+.burger i{display:block;width:20px;height:2px;background:currentColor;border-radius:2px}
+.scrim{position:fixed;inset:0;background:rgba(6,20,40,.5);z-index:48;display:none}
+.scrim.show{display:block}
+
+main{padding:26px 28px 70px;min-width:0}
+.page-h{display:flex;align-items:flex-end;gap:14px;margin-bottom:22px;flex-wrap:wrap}
+.page-h p{margin:0;color:var(--ink-3);font-size:13.5px}
+.page-h .r{margin-left:auto;display:flex;gap:9px}
+
+/* ---------- 統計磚 ---------- */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:18px 20px;box-shadow:var(--sh)}
+.tile .k{font-size:12.5px;color:var(--ink-3);letter-spacing:.1em}
+.tile .v{font-family:var(--serif);font-size:32px;line-height:1.15;color:var(--navy);margin-top:7px}
+.tile .d{font-size:12.5px;margin-top:5px;color:var(--ink-3);display:flex;align-items:center;gap:5px}
+.tile .d.up{color:var(--s-closed)}.tile .d.down{color:var(--danger)}
+.tile.hi{background:linear-gradient(140deg,#0B213F,#12315C);border-color:transparent}
+.tile.hi .k{color:rgba(255,255,255,.6)}.tile.hi .v{color:var(--gold-lt)}
+.tile.hi .d{color:rgba(255,255,255,.55)}
+@media(max-width:1100px){.tiles{grid-template-columns:repeat(2,1fr)}}
+
+/* ---------- 圖表 ---------- */
+.grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:1000px){.grid2{grid-template-columns:1fr}}
+.panel{padding:22px 24px}
+.panel-h{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+.panel-h h3{font-size:16.5px;color:var(--navy)}
+.panel-h span{font-size:12.5px;color:var(--ink-3);margin-left:auto}
+.panel-sub{font-size:12.5px;color:var(--ink-3);margin:0 0 20px}
+
+.chart{position:relative;height:190px;margin-left:34px}
+.grid-l{position:absolute;inset:0;pointer-events:none}
+.grid-l i{position:absolute;left:0;right:0;height:1px;background:var(--line-2)}
+.grid-l b{position:absolute;left:-34px;transform:translateY(-50%);font-size:11px;color:var(--ink-3);
+  font-weight:400;font-variant-numeric:tabular-nums}
+.bars{position:absolute;inset:0;display:flex;align-items:flex-end;gap:2px}
+.bcol{flex:1;height:100%;display:flex;align-items:flex-end;position:relative;cursor:default}
+.bcol .bar{width:100%;background:var(--bar);border-radius:4px 4px 0 0;min-height:2px;
+  transition:filter .18s;background-clip:padding-box}
+.bcol:hover .bar{filter:brightness(1.28)}
+.bcol.zero .bar{background:var(--line);border-radius:2px}
+.xax{display:flex;gap:2px;margin:9px 0 0 34px}
+.xax span{flex:1;text-align:center;font-size:10.5px;color:var(--ink-3);font-variant-numeric:tabular-nums;
+  overflow:hidden;white-space:nowrap}
+.tip{position:absolute;z-index:20;background:var(--navy-deep);color:#fff;padding:8px 12px;border-radius:8px;
+  font-size:12.5px;line-height:1.5;pointer-events:none;opacity:0;transform:translate(-50%,-118%);
+  transition:opacity .15s;white-space:nowrap;box-shadow:0 10px 26px -10px rgba(0,0,0,.6)}
+.tip.show{opacity:1}
+.tip b{color:var(--gold-lt);font-weight:700}
+
+.sbars{display:grid;gap:15px}
+.sbar .top{display:flex;align-items:center;gap:9px;font-size:13.5px;margin-bottom:7px}
+.sbar .dot{width:10px;height:10px;border-radius:3px;flex:none}
+.sbar .n{margin-left:auto;font-weight:500;font-variant-numeric:tabular-nums;color:var(--ink)}
+.sbar .pc{color:var(--ink-3);font-size:12px;font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
+.sbar .track{height:8px;border-radius:4px;background:var(--line-2);overflow:hidden}
+.sbar .fill{height:100%;border-radius:4px;transition:width .5s cubic-bezier(.2,.7,.3,1)}
+
+.rec{display:grid;gap:2px}
+.rec a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:9px;transition:.2s;cursor:pointer}
+.rec a:hover{background:#F8FAFC}
+.rec .nm{font-weight:500;color:var(--navy)}
+.rec .tel{color:var(--ink-3);font-size:12.5px;font-variant-numeric:tabular-nums}
+.rec .rt{margin-left:auto;display:flex;align-items:center;gap:10px}
+.rec .tm{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.srcs{display:grid;gap:10px}
+.srcs div{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-2)}
+.srcs b{margin-left:auto;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* ---------- 篩選 + 表格 ---------- */
+.bar-f{padding:16px 18px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.bar-f .f{margin:0}
+.bar-f .f label{font-size:12px;margin-bottom:6px}
+.bar-f input,.bar-f select{padding:9px 12px;border-radius:8px}
+.bar-f .grow{flex:1;min-width:190px}
+.bar-f .r{margin-left:auto;display:flex;gap:9px}
+.tscroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:1000px}
+th{background:#F8FAFC;text-align:left;font-size:12.5px;font-weight:500;color:var(--ink-2);
+  letter-spacing:.1em;padding:13px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+th.tr{text-align:right}
+td{padding:14px;border-bottom:1px solid var(--line-2);vertical-align:top;font-size:14px}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#FBFCFE}
+.t-time{color:var(--ink-3);font-size:12.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.t-name{font-weight:500;color:var(--navy);white-space:nowrap}
+.t-name small{display:block;font-weight:400;color:var(--ink-3);font-size:11.5px}
+.t-tel{font-variant-numeric:tabular-nums;white-space:nowrap}
+.t-tel a{color:var(--s-contacted);font-weight:500}.t-tel a:hover{text-decoration:underline}
+.t-mail{color:var(--ink-2);font-size:13px;word-break:break-all;max-width:190px}
+.t-note{color:var(--ink-2);font-size:13px;max-width:230px;line-height:1.6}
+.t-note:empty::before{content:"—";color:var(--ink-3)}
+.t-act{white-space:nowrap;text-align:right}
+.st-sel{padding:5px 9px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;background:#fff;cursor:pointer}
+.empty{padding:70px 24px;text-align:center;color:var(--ink-3)}
+.tag-self{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:99px;font-size:10.5px;
+  background:var(--navy);color:#fff;letter-spacing:.08em;vertical-align:1px}
+.lockmark{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:99px;font-size:10.5px;
+  background:#FFF7E8;color:#8A6410;border:1px solid #F0DDB4;letter-spacing:.06em;cursor:help}
+.lockhint{margin:16px 0 0;padding:11px 13px;border-radius:9px;background:#FFF7E8;border:1px solid #F0DDB4;
+  color:#8A6410;font-size:12.5px;line-height:1.7}
+.empty b{display:block;font-family:var(--serif);font-size:17px;color:var(--ink-2);margin-bottom:7px}
+
+/* ---------- 分頁 ---------- */
+.pager{display:flex;align-items:center;gap:14px;padding:14px 18px;border-top:1px solid var(--line);
+  background:#F8FAFC;font-size:13.5px;color:var(--ink-2);flex-wrap:wrap}
+.pages{margin-left:auto;display:flex;align-items:center;gap:5px}
+.pg{min-width:34px;height:34px;padding:0 9px;border:1px solid var(--line);background:#fff;border-radius:8px;
+  cursor:pointer;font-size:13.5px;color:var(--ink-2);transition:.2s;font-variant-numeric:tabular-nums;
+  display:inline-grid;place-items:center}
+.pg:hover:not(:disabled):not(.on){border-color:var(--navy);color:var(--navy)}
+.pg:disabled{opacity:.35;cursor:not-allowed}
+.pg.on{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:500}
+.pg.gap{border:none;background:none;cursor:default;color:var(--ink-3);min-width:20px}
+.jump{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-3)}
+.jump input{width:58px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;text-align:center;
+  font-variant-numeric:tabular-nums;background:#fff}
+
+/* ---------- 彈窗 / 提示 ---------- */
+.mask{position:fixed;inset:0;z-index:80;background:rgba(6,20,40,.55);backdrop-filter:blur(3px);
+  display:grid;place-items:center;padding:22px}
+.modal{background:var(--card);border-radius:16px;width:100%;max-width:520px;max-height:88dvh;overflow:auto;
+  box-shadow:0 40px 90px -25px rgba(0,0,0,.5)}
+.modal-h{padding:22px 26px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+.modal-h h3{font-size:18px;color:var(--navy)}
+.modal-h button{margin-left:auto;background:none;border:none;font-size:22px;color:var(--ink-3);cursor:pointer;line-height:1}
+.modal-b{padding:24px 26px}
+.modal-f{padding:16px 26px 22px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.kv{display:grid;grid-template-columns:88px 1fr;gap:9px 14px;font-size:14px;margin-bottom:20px}
+.kv dt{color:var(--ink-3);font-size:13px}
+.kv dd{margin:0;word-break:break-all}
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,140%);z-index:99;
+  background:var(--navy-deep);color:#fff;padding:13px 24px;border-radius:99px;font-size:14px;
+  box-shadow:0 18px 40px -14px rgba(0,0,0,.6);transition:transform .35s cubic-bezier(.2,.7,.3,1)}
+.toast.show{transform:translate(-50%,0)}
+
+@media(max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .side{position:fixed;left:0;top:0;width:var(--side);transform:translateX(-100%);
+    transition:transform .3s cubic-bezier(.2,.7,.3,1)}
+  .side.open{transform:none;box-shadow:0 0 60px rgba(0,0,0,.5)}
+  .burger{display:grid}
+  .topbar{padding:0 14px;height:58px}
+  .tb-title{font-size:16.5px}
+  .ub-t{display:none}
+  main{padding:18px 14px 60px}
+}
+
+.demo-hint{margin:-14px 0 26px;padding:13px 15px;border-radius:10px;background:#FFF7E8;
+  border:1px solid #F0DDB4;color:#8A6410;font-size:12.5px;line-height:1.85;text-align:center}
+.demo-hint b{color:#6E4F08}
+.demo-hint code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+  background:#fff;border:1px solid #E8D6AC;border-radius:5px;padding:1px 6px;color:#6E4F08}
+.demo-chip{padding:4px 11px;border-radius:99px;font-size:11.5px;letter-spacing:.08em;
+  background:#FFF7E8;border:1px solid #F0DDB4;color:#8A6410;white-space:nowrap}
+@media(max-width:900px){.demo-chip{display:none}}
+</style>
+<script src="../demo.js"></script>
+</head>
+<body>
+
+<!-- ============ 登入 ============ -->
+<div class="login-wrap" id="view-login">
+  <form class="login" id="login-form">
+    <img src="../assets/lockup-h-navy.png" alt="宸信金融顧問">
+    <h1>管理後台</h1>
+    <p class="sub">CHENXIN ADMIN CONSOLE</p>
+    <div class="demo-hint">
+      <b>示範版</b>可直接用下列帳號登入試用：<br>
+      管理員 <code>admin</code>　·　一般人員 <code>sales01</code><br>
+      密碼皆為 <code>demo1234</code>
+    </div>
+    <div class="msg err" id="login-msg"></div>
+    <div class="f"><label for="lg-u">帳號</label>
+      <input id="lg-u" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" required></div>
+    <div class="f"><label for="lg-p">密碼</label>
+      <input id="lg-p" name="password" type="password" autocomplete="current-password" required></div>
+    <button class="btn btn-g btn-block" id="lg-btn">登入</button>
+  </form>
+</div>
+
+<!-- ============ 主畫面 ============ -->
+<div id="view-app" class="hide">
+  <div class="scrim" id="scrim"></div>
+
+  <div class="shell">
+    <aside class="side" id="side">
+      <div class="side-brand">
+        <img src="../assets/mark-white.png" alt="">
+        <b>宸信金融顧問<small>ADMIN</small></b>
+      </div>
+      <nav class="nav">
+        <div class="nav-h">管理項目</div>
+        <a data-tab="dash" class="on">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+          儀表板</a>
+        <a data-tab="leads">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          名單管理<span class="badge hide" id="nav-badge">0</span></a>
+        <a data-tab="users" id="nav-users">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          帳號管理</a>
+      </nav>
+      <div class="side-note">CHENXIN ADMIN v1.0</div>
+    </aside>
+
+    <div class="col">
+      <header class="topbar">
+        <button class="burger" id="burger" aria-label="開啟選單"><i></i><i></i><i></i></button>
+        <h1 class="tb-title" id="tb-title">儀表板</h1><span class="demo-chip">示範模式</span>
+        <div class="tb-r">
+          <button class="userbtn" id="userbtn" aria-haspopup="menu" aria-expanded="false">
+            <span class="avatar" id="who-i"></span>
+            <span class="ub-t"><b id="who-name"></b><span id="who-role"></span></span>
+            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="umenu" id="umenu" role="menu">
+            <div class="um-head"><b id="um-name"></b><span id="um-acct"></span></div>
+            <button id="btn-pw" role="menuitem">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              修改密碼</button>
+            <button id="btn-out" class="danger" role="menuitem">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+              登出</button>
+          </div>
+        </div>
+      </header>
+
+      <main>
+      <!-- ---------- 儀表板 ---------- -->
+      <section id="pg-dash">
+        <div class="page-h"><p id="dash-when"></p>
+          <div class="r"><button class="btn btn-o btn-sm" id="btn-refresh">重新整理</button></div></div>
+
+        <div class="tiles" id="tiles"></div>
+
+        <div class="grid2">
+          <div class="card panel">
+            <div class="panel-h"><h3>近 14 日名單趨勢</h3><span id="chart-total"></span></div>
+            <p class="panel-sub">每日表單送出筆數，依台灣時間計算。滑鼠移到長條可看當日數字。</p>
+            <div class="chart" id="chart">
+              <div class="grid-l" id="glines"></div>
+              <div class="bars" id="bars"></div>
+              <div class="tip" id="tip"></div>
+            </div>
+            <div class="xax" id="xax"></div>
+          </div>
+
+          <div class="card panel">
+            <div class="panel-h"><h3>處理狀態分布</h3></div>
+            <p class="panel-sub">全部名單依目前處理狀態統計。</p>
+            <div class="sbars" id="sbars"></div>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="card panel">
+            <div class="panel-h"><h3>最新名單</h3><span>點擊可跳至名單管理</span></div>
+            <p class="panel-sub">最近送出的 8 筆。</p>
+            <div class="rec" id="recent"></div>
+          </div>
+          <div class="card panel">
+            <div class="panel-h"><h3>名單來源</h3></div>
+            <p class="panel-sub">依前台送出位置分類。</p>
+            <div class="srcs" id="srcs"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- 名單 ---------- -->
+      <section id="pg-leads" class="hide">
+        <div class="page-h"><p>前台表單送出的資料會即時進到這裡</p>
+          <div class="r"><button class="btn btn-p btn-sm" id="btn-csv">匯出 CSV</button></div></div>
+
+        <div class="card bar-f">
+          <div class="f grow"><label for="q">搜尋</label>
+            <input id="q" placeholder="姓名、電話、Email 或備註"></div>
+          <div class="f"><label for="fs">狀態</label>
+            <select id="fs">
+              <option value="all">全部</option><option value="new">未處理</option>
+              <option value="contacted">已聯繫</option><option value="closed">已成交</option>
+              <option value="invalid">無效</option>
+            </select></div>
+          <div class="f"><label for="ff">起始日</label><input id="ff" type="date"></div>
+          <div class="f"><label for="ft">結束日</label><input id="ft" type="date"></div>
+          <div class="f"><label for="fz">每頁</label>
+            <select id="fz"><option>10</option><option>25</option><option>50</option><option>100</option></select></div>
+          <div class="r"><button class="btn btn-o btn-sm" id="btn-reset">清除條件</button></div>
+        </div>
+
+        <div class="card">
+          <div class="tscroll">
+            <table>
+              <thead><tr>
+                <th style="width:132px">送出時間</th><th style="width:106px">姓名</th>
+                <th style="width:126px">電話</th><th>Email</th><th style="width:96px">來源</th>
+                <th style="width:96px">狀態</th><th>備註</th>
+                <th style="width:158px" class="tr">操作</th>
+              </tr></thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+          <div class="empty hide" id="empty"><b>目前沒有符合條件的名單</b>調整篩選條件，或等待新的表單送出。</div>
+          <div class="pager">
+            <span id="pg-info"></span>
+            <div class="pages" id="pages"></div>
+            <div class="jump">跳至<input id="pg-jump" type="number" min="1" inputmode="numeric">頁</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- 帳號 ---------- -->
+      <section id="pg-users" class="hide">
+        <div class="page-h"><p>管理可以登入後台的人員</p>
+          <div class="r"><button class="btn btn-g btn-sm" id="btn-newuser">＋ 新增帳號</button></div></div>
+        <div class="card"><div class="tscroll">
+          <table><thead><tr>
+            <th style="width:70px">編號</th><th>帳號</th><th>顯示名稱</th>
+            <th style="width:110px">權限</th><th style="width:100px">狀態</th>
+            <th style="width:150px">最後登入</th><th style="width:200px" class="tr">操作</th>
+          </tr></thead><tbody id="urows"></tbody></table>
+        </div></div>
+      </section>
+      </main>
+    </div>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ 基礎 ============ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* 狀態顯示順序經 CVD 驗證：已成交 → 已聯繫 → 未處理 → 無效 */
+const ST={closed:['已成交','p-closed','--s-closed'],contacted:['已聯繫','p-contacted','--s-contacted'],
+          new:['未處理','p-new','--s-new'],invalid:['無效','p-invalid','--s-invalid']};
+const ST_FORM={new:'未處理',contacted:'已聯繫',closed:'已成交',invalid:'無效'};
+
+async function api(path,opt={}){
+  const r=await fetch('/api/admin'+path,{headers:{'Content-Type':'application/json'},...opt});
+  const d=await r.json().catch(()=>({}));
+  if(r.status===401){showLogin();throw new Error(d.error||'請重新登入');}
+  if(!r.ok||d.ok===false)throw new Error(d.error||'操作失敗');
+  return d;
+}
+let toastTimer;
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2600);}
+const fmt=iso=>new Date(iso).toLocaleString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',
+  hour:'2-digit',minute:'2-digit',hour12:false}).replace(/\//g,'-');
+const fmtShort=iso=>new Date(iso).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',
+  hour:'2-digit',minute:'2-digit',hour12:false}).replace(/\//g,'-');
+
+function modal({title,body,actions}){
+  const root=$('#modal-root');
+  root.innerHTML=`<div class="mask"><div class="modal">
+    <div class="modal-h"><h3>${esc(title)}</h3><button type="button" data-x aria-label="關閉">×</button></div>
+    <div class="modal-b">${body}</div>
+    <div class="modal-f">${actions}</div></div></div>`;
+  const close=()=>root.innerHTML='';
+  root.querySelector('[data-x]').onclick=close;
+  root.querySelector('.mask').onclick=e=>{if(e.target===e.currentTarget)close();};
+  document.addEventListener('keydown',function k(e){if(e.key==='Escape'){close();document.removeEventListener('keydown',k);}});
+  return {root,close};
+}
+
+/* ============ 登入 ============ */
+let ME=null;
+function showLogin(){ME=null;$('#view-app').classList.add('hide');$('#view-login').classList.remove('hide');}
+
+$('#login-form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const msg=$('#login-msg'),btn=$('#lg-btn');
+  msg.classList.remove('show');btn.disabled=true;btn.textContent='登入中…';
+  try{
+    const d=await api('/login',{method:'POST',body:JSON.stringify({username:$('#lg-u').value,password:$('#lg-p').value})});
+    ME=d.user;$('#lg-p').value='';enter();
+  }catch(err){msg.textContent=err.message;msg.classList.add('show');}
+  finally{btn.disabled=false;btn.textContent='登入';}
+});
+
+function enter(){
+  $('#view-login').classList.add('hide');$('#view-app').classList.remove('hide');
+  const nm=ME.display||ME.username, role=ME.role==='admin'?'管理員':'一般人員';
+  $('#who-name').textContent=nm;
+  $('#who-i').textContent=[...nm][0]||'?';        // 用碼位取字，中英文都不會切壞
+  $('#who-role').textContent=role;
+  $('#um-name').textContent=nm;
+  $('#um-acct').textContent=ME.username+'　·　'+role;
+  $('#nav-users').classList.toggle('hide',ME.role!=='admin');
+  go('dash');
+}
+
+/* 右上角使用者選單 */
+const ubtn=$('#userbtn'),umenu=$('#umenu');
+const closeMenu=()=>{umenu.classList.remove('show');ubtn.setAttribute('aria-expanded','false');};
+ubtn.onclick=e=>{
+  e.stopPropagation();
+  const open=!umenu.classList.contains('show');
+  umenu.classList.toggle('show',open);ubtn.setAttribute('aria-expanded',String(open));
+};
+document.addEventListener('click',e=>{if(!umenu.contains(e.target)&&e.target!==ubtn)closeMenu();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
+
+$('#btn-out').onclick=async()=>{closeMenu();try{await api('/logout',{method:'POST'});}catch{}showLogin();};
+
+/* ============ 導覽 ============ */
+const side=$('#side'),scrim=$('#scrim');
+const closeSide=()=>{side.classList.remove('open');scrim.classList.remove('show');};
+$('#burger').onclick=()=>{side.classList.toggle('open');scrim.classList.toggle('show');};
+scrim.onclick=closeSide;
+
+const TITLES={dash:'儀表板',leads:'名單管理',users:'帳號管理'};
+function go(tab){
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('on',a.dataset.tab===tab));
+  ['dash','leads','users'].forEach(t=>$('#pg-'+t).classList.toggle('hide',t!==tab));
+  $('#tb-title').textContent=TITLES[tab];
+  document.title=TITLES[tab]+'｜宸信金融顧問';
+  closeSide();
+  if(tab==='dash')loadDash();
+  if(tab==='leads')loadLeads();
+  if(tab==='users')loadUsers();
+}
+document.querySelectorAll('.nav a').forEach(a=>a.onclick=()=>go(a.dataset.tab));
+
+/* ============ 儀表板 ============ */
+$('#btn-refresh').onclick=()=>loadDash();
+
+function delta(now,prev,unit){
+  if(prev===0)return now>0?{cls:'up',txt:`較前期新增 ${now} 筆`}:{cls:'',txt:'與前期相同'};
+  const p=Math.round((now-prev)/prev*100);
+  if(p===0)return{cls:'',txt:`與${unit}持平`};
+  return{cls:p>0?'up':'down',txt:`${p>0?'▲':'▼'} ${Math.abs(p)}%　較${unit}`};
+}
+
+async function loadDash(){
+  let d;try{d=await api('/dashboard');}catch(e){return toast(e.message);}
+  const s=d.stats;
+  $('#dash-when').textContent='資料更新於 '+new Date().toLocaleString('zh-TW',{hour12:false});
+  $('#nav-badge').textContent=s.pending;
+  $('#nav-badge').classList.toggle('hide',!s.pending);
+
+  const dToday=delta(s.today,s.yesterday,'昨日'),dWeek=delta(s.week,s.prevWeek,'前 7 日');
+  $('#tiles').innerHTML=[
+    {k:'今日新進',v:s.today,d:dToday,hi:1},
+    {k:'待處理',v:s.pending,d:{cls:s.pending?'down':'',txt:s.pending?'需要盡快聯繫':'目前都已處理'}},
+    {k:'近 7 日',v:s.week,d:dWeek},
+    {k:'名單總數',v:s.total,d:{cls:'',txt:`近 30 日 ${s.month} 筆`}}
+  ].map(t=>`<div class="tile${t.hi?' hi':''}">
+      <div class="k">${t.k}</div><div class="v num">${t.v}</div>
+      <div class="d ${t.d.cls}">${esc(t.d.txt)}</div></div>`).join('');
+
+  drawChart(d.daily,d.today);
+
+  const total=d.byStatus.reduce((a,b)=>a+b.c,0);
+  const map=Object.fromEntries(d.byStatus.map(r=>[r.status,r.c]));
+  $('#sbars').innerHTML=Object.entries(ST).map(([k,[label,,varname]])=>{
+    const n=map[k]||0,pc=total?Math.round(n/total*100):0;
+    return `<div class="sbar">
+      <div class="top"><span class="dot" style="background:var(${varname})"></span>
+        <span>${label}</span><span class="n num">${n}</span><span class="pc">${pc}%</span></div>
+      <div class="track"><div class="fill" style="width:${pc}%;background:var(${varname})"></div></div>
+    </div>`;}).join('');
+
+  $('#recent').innerHTML=d.recent.length?d.recent.map(r=>{
+    const [label,cls]=ST[r.status]||['—','p-invalid'];
+    return `<a data-jump="${esc(r.phone)}">
+      <span class="nm">${esc(r.name)}</span><span class="tel">${esc(r.phone)}</span>
+      <span class="rt"><span class="pill ${cls}">${label}</span>
+      <span class="tm">${fmtShort(r.created_at)}</span></span></a>`;
+  }).join(''):'<p style="color:#8B97A8;font-size:13.5px;padding:8px 12px">還沒有任何名單。</p>';
+
+  $('#srcs').innerHTML=d.bySource.length?d.bySource.map(r=>
+    `<div><span>${esc(r.source||'未標示')}</span><b class="num">${r.c}</b></div>`).join('')
+    :'<p style="color:#8B97A8;font-size:13.5px">還沒有資料。</p>';
+}
+
+$('#recent').addEventListener('click',e=>{
+  const a=e.target.closest('[data-jump]');if(!a)return;
+  go('leads');$('#q').value=a.dataset.jump;PAGE=1;loadLeads();
+});
+
+/* ---- 近 14 日長條圖（單一序列，不需圖例；標題已說明內容） ---- */
+function drawChart(daily,todayStr){
+  const days=[],map=Object.fromEntries(daily.map(r=>[r.d,r.c]));
+  const base=new Date(todayStr+'T00:00:00');
+  for(let i=13;i>=0;i--){
+    const dt=new Date(base);dt.setDate(dt.getDate()-i);
+    const key=dt.toISOString().slice(0,10);
+    days.push({key,c:map[key]||0,md:`${dt.getMonth()+1}/${dt.getDate()}`,
+      wd:'日一二三四五六'[dt.getDay()]});
+  }
+  const peak=Math.max(1,...days.map(d=>d.c));
+  const top=peak<=4?peak:Math.ceil(peak/4)*4;      // 讓刻度落在整數
+  $('#chart-total').textContent=`合計 ${days.reduce((a,b)=>a+b.c,0)} 筆`;
+
+  $('#glines').innerHTML=[0,1,2,3,4].map(i=>{
+    const v=Math.round(top*(4-i)/4);
+    return `<i style="top:${i*25}%"></i><b style="top:${i*25}%">${v}</b>`;}).join('');
+
+  $('#bars').innerHTML=days.map((d,i)=>
+    `<div class="bcol${d.c?'':' zero'}" data-i="${i}" tabindex="0">
+       <div class="bar" style="height:${d.c?Math.max(d.c/top*100,3):0}%"></div></div>`).join('');
+
+  $('#xax').innerHTML=days.map((d,i)=>
+    `<span>${(i%2===1||i===13)?d.md:''}</span>`).join('');
+
+  const tip=$('#tip'),chart=$('#chart');
+  $('#bars').onmouseover=$('#bars').onfocusin=e=>{
+    const col=e.target.closest('.bcol');if(!col)return;
+    const d=days[+col.dataset.i],r=col.getBoundingClientRect(),cr=chart.getBoundingClientRect();
+    tip.innerHTML=`${d.md}（週${d.wd}）　<b>${d.c}</b> 筆`;
+    tip.style.left=(r.left-cr.left+r.width/2)+'px';
+    const y=r.top-cr.top+(d.c?r.height*(1-Math.max(d.c/top,.03)):r.height);
+    tip.style.top=Math.max(y,34)+'px';          // 夾住上緣，長條很高時提示不會溢出面板
+    tip.classList.add('show');
+  };
+  $('#bars').onmouseleave=$('#bars').onfocusout=()=>tip.classList.remove('show');
+}
+
+/* ============ 名單 ============ */
+let PAGE=1;
+const filters=()=>({q:$('#q').value.trim(),status:$('#fs').value,from:$('#ff').value,to:$('#ft').value,size:$('#fz').value});
+const qs=extra=>new URLSearchParams({...filters(),...extra}).toString();
+
+function pageList(cur,total){
+  if(total<=7)return[...Array(total)].map((_,i)=>i+1);
+  const out=[1];
+  if(cur>4)out.push('…');
+  for(let i=Math.max(2,cur-1);i<=Math.min(total-1,cur+1);i++)out.push(i);
+  if(cur<total-3)out.push('…');
+  out.push(total);
+  return out;
+}
+
+async function loadLeads(){
+  let d;try{d=await api('/leads?'+qs({page:PAGE}));}catch(e){return toast(e.message);}
+  PAGE=d.page;
+  $('#empty').classList.toggle('hide',d.rows.length>0);
+  $('#rows').innerHTML=d.rows.map(r=>{
+    const [label,cls]=ST[r.status]||[r.status,'p-invalid'];
+    return `<tr data-id="${r.id}">
+      <td class="t-time">${fmt(r.created_at)}</td>
+      <td class="t-name">${esc(r.name)}<small>${esc(r.salutation)}</small></td>
+      <td class="t-tel"><a href="tel:${esc(r.phone)}">${esc(r.phone)}</a></td>
+      <td class="t-mail">${r.email?esc(r.email):'<span style="color:#8B97A8">—</span>'}</td>
+      <td style="font-size:13px;color:#5A6779">${esc(r.source)}</td>
+      <td><span class="pill ${cls}">${label}</span></td>
+      <td class="t-note">${esc(r.note)}</td>
+      <td class="t-act">
+        <select class="st-sel" data-st="${r.id}" aria-label="變更狀態">
+          ${Object.entries(ST_FORM).map(([k,v])=>`<option value="${k}"${k===r.status?' selected':''}>${v}</option>`).join('')}
+        </select>
+        <button class="btn btn-o btn-sm" data-view="${r.id}" style="margin-left:6px">詳情</button>
+      </td></tr>`;
+  }).join('');
+
+  const from=d.total?(d.page-1)*d.size+1:0, to=Math.min(d.page*d.size,d.total);
+  $('#pg-info').textContent=`共 ${d.total} 筆，顯示第 ${from}–${to} 筆`;
+  $('#pages').innerHTML=
+    `<button class="pg" data-go="1" ${d.page<=1?'disabled':''} aria-label="第一頁">«</button>
+     <button class="pg" data-go="${d.page-1}" ${d.page<=1?'disabled':''} aria-label="上一頁">‹</button>`
+    + pageList(d.page,d.pages).map(n=>n==='…'
+        ? '<span class="pg gap">…</span>'
+        : `<button class="pg${n===d.page?' on':''}" data-go="${n}">${n}</button>`).join('')
+    + `<button class="pg" data-go="${d.page+1}" ${d.page>=d.pages?'disabled':''} aria-label="下一頁">›</button>
+       <button class="pg" data-go="${d.pages}" ${d.page>=d.pages?'disabled':''} aria-label="最後一頁">»</button>`;
+  $('#pg-jump').max=d.pages;$('#pg-jump').value='';
+  window.__rows=d.rows;window.__pages=d.pages;
+}
+
+$('#pages').addEventListener('click',e=>{
+  const b=e.target.closest('[data-go]');if(!b||b.disabled)return;
+  PAGE=+b.dataset.go;loadLeads();window.scrollTo({top:0,behavior:'smooth'});
+});
+$('#pg-jump').addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  const n=Math.min(Math.max(+e.target.value||1,1),window.__pages||1);
+  PAGE=n;loadLeads();
+});
+
+$('#rows').addEventListener('change',async e=>{
+  const id=e.target.dataset.st;if(!id)return;
+  try{await api(`/leads/${id}`,{method:'PATCH',body:JSON.stringify({status:e.target.value})});
+    toast('狀態已更新');loadLeads();}
+  catch(err){toast(err.message);}
+});
+
+$('#rows').addEventListener('click',e=>{
+  const b=e.target.closest('[data-view]');if(!b)return;
+  const r=(window.__rows||[]).find(x=>x.id==b.dataset.view);if(!r)return;
+  const m=modal({
+    title:`名單 #${r.id}`,
+    body:`<dl class="kv">
+      <dt>送出時間</dt><dd>${fmt(r.created_at)}</dd>
+      <dt>姓名</dt><dd>${esc(r.name)} ${esc(r.salutation)}</dd>
+      <dt>電話</dt><dd><a href="tel:${esc(r.phone)}" style="color:#1D5FA8;font-weight:500">${esc(r.phone)}</a></dd>
+      <dt>Email</dt><dd>${r.email?esc(r.email):'—'}</dd>
+      <dt>來源</dt><dd>${esc(r.source)}</dd>
+      <dt>IP</dt><dd style="font-size:12.5px;color:#8B97A8">${esc(r.ip)||'—'}</dd>
+      <dt>裝置</dt><dd style="font-size:12px;color:#8B97A8;line-height:1.5">${esc(r.ua)||'—'}</dd>
+    </dl>
+    <div class="f"><label for="m-st">處理狀態</label><select id="m-st">
+      ${Object.entries(ST_FORM).map(([k,v])=>`<option value="${k}"${k===r.status?' selected':''}>${v}</option>`).join('')}
+    </select></div>
+    <div class="f" style="margin-bottom:0"><label for="m-note">跟進備註</label>
+      <textarea id="m-note" placeholder="記錄聯繫情形、客戶條件、後續動作…">${esc(r.note)}</textarea></div>`,
+    actions:`${ME.role==='admin'?'<button class="btn btn-d" id="m-del">刪除此筆</button>':''}
+      <button class="btn btn-o" data-x2>取消</button><button class="btn btn-g" id="m-save">儲存</button>`
+  });
+  m.root.querySelector('[data-x2]').onclick=m.close;
+  m.root.querySelector('#m-save').onclick=async()=>{
+    try{await api(`/leads/${r.id}`,{method:'PATCH',
+      body:JSON.stringify({status:m.root.querySelector('#m-st').value,note:m.root.querySelector('#m-note').value})});
+      m.close();toast('已儲存');loadLeads();}
+    catch(err){toast(err.message);}
+  };
+  const del=m.root.querySelector('#m-del');
+  if(del)del.onclick=async()=>{
+    if(!confirm(`確定要刪除「${r.name}」這筆名單嗎？刪除後無法復原。`))return;
+    try{await api(`/leads/${r.id}`,{method:'DELETE'});m.close();toast('已刪除');loadLeads();}
+    catch(err){toast(err.message);}
+  };
+});
+
+let deb;
+$('#q').addEventListener('input',()=>{clearTimeout(deb);deb=setTimeout(()=>{PAGE=1;loadLeads();},320);});
+['#fs','#ff','#ft','#fz'].forEach(s=>$(s).addEventListener('change',()=>{PAGE=1;loadLeads();}));
+$('#btn-reset').onclick=()=>{$('#q').value='';$('#fs').value='all';$('#ff').value='';$('#ft').value='';
+  $('#fz').value='10';PAGE=1;loadLeads();};
+$('#btn-csv').onclick=()=>{location.href='/api/admin/leads.csv?'+qs({});};
+
+/* ============ 帳號 ============ */
+async function loadUsers(){
+  let d;try{d=await api('/users');}catch(e){return toast(e.message);}
+  const activeAdmins=d.rows.filter(u=>u.role==='admin'&&u.active).length;
+  $('#urows').innerHTML=d.rows.map(u=>{
+    const isSelf=u.id===ME.id;
+    const isLastAdmin=u.role==='admin'&&u.active&&activeAdmins<=1;
+    const why=isSelf?'不能刪除自己目前登入中的帳號'
+             :isLastAdmin?'系統必須保留至少一位啟用中的管理員':'';
+    return `<tr>
+    <td style="color:#8B97A8">#${u.id}</td>
+    <td style="font-weight:500;color:#0B213F">${esc(u.username)}${isSelf?'<span class="tag-self">你</span>':''}</td>
+    <td>${esc(u.display)}</td>
+    <td><span class="pill ${u.role==='admin'?'p-closed':'p-contacted'}">${u.role==='admin'?'管理員':'一般人員'}</span>
+        ${isLastAdmin?'<span class="lockmark" title="系統必須保留至少一位啟用中的管理員">唯一管理員</span>':''}</td>
+    <td><span class="pill ${u.active?'p-contacted':'p-invalid'}">${u.active?'啟用中':'已停用'}</span></td>
+    <td class="t-time">${u.last_login?fmt(u.last_login):'—'}</td>
+    <td class="t-act">
+      <button class="btn btn-o btn-sm" data-eu="${u.id}">編輯</button>
+      <button class="btn btn-d btn-sm" data-du="${u.id}" style="margin-left:6px"
+        ${why?`disabled title="${why}"`:''}>刪除</button>
+    </td></tr>`;}).join('');
+  window.__users=d.rows;
+  window.__activeAdmins=activeAdmins;
+}
+
+function lockReason(u){
+  if(u.id===ME.id)return '這是你自己的帳號，無法降權或停用，需要調整請由另一位管理員操作。';
+  if(u.role==='admin'&&u.active&&(window.__activeAdmins||0)<=1)
+    return '這是系統目前唯一一位啟用中的管理員，無法降權、停用或刪除。請先新增另一位管理員。';
+  return '';
+}
+
+function userForm(u){
+  return `<div class="f"><label for="u-n">帳號</label>
+      <input id="u-n" value="${esc(u?.username||'')}" ${u?'disabled style="background:#EDF0F4;color:#8B97A8"':'placeholder="英文、數字、底線，3–40 字元"'} autocapitalize="off" spellcheck="false"></div>
+    <div class="f"><label for="u-d">顯示名稱</label>
+      <input id="u-d" value="${esc(u?.display||'')}" placeholder="例：王小明"></div>
+    <div class="f"><label for="u-p">${u?'重設密碼（留空表示不更動）':'密碼'}</label>
+      <input id="u-p" type="password" placeholder="至少 8 個字元" autocomplete="new-password"></div>
+    <div class="f"><label for="u-r">權限</label><select id="u-r">
+      <option value="staff"${u?.role!=='admin'?' selected':''}>一般人員（只能查看與更新名單）</option>
+      <option value="admin"${u?.role==='admin'?' selected':''}>管理員（可管理帳號、刪除名單）</option>
+    </select></div>
+    ${u?`<div class="f" style="margin-bottom:0"><label for="u-a">狀態</label><select id="u-a">
+      <option value="1"${u.active?' selected':''}>啟用中</option>
+      <option value="0"${!u.active?' selected':''}>停用（無法登入）</option></select></div>`:''}
+    ${u&&lockReason(u)?`<p class="lockhint">${lockReason(u)}</p>`:''}`;
+}
+
+$('#btn-newuser').onclick=()=>{
+  const m=modal({title:'新增後台帳號',body:userForm(null),
+    actions:`<button class="btn btn-o" data-x2>取消</button><button class="btn btn-g" id="u-ok">建立帳號</button>`});
+  m.root.querySelector('[data-x2]').onclick=m.close;
+  m.root.querySelector('#u-ok').onclick=async()=>{
+    try{await api('/users',{method:'POST',body:JSON.stringify({
+      username:m.root.querySelector('#u-n').value,display:m.root.querySelector('#u-d').value,
+      password:m.root.querySelector('#u-p').value,role:m.root.querySelector('#u-r').value})});
+      m.close();toast('帳號已建立');loadUsers();}
+    catch(err){toast(err.message);}
+  };
+};
+
+$('#urows').addEventListener('click',async e=>{
+  const eu=e.target.closest('[data-eu]'),du=e.target.closest('[data-du]');
+  if(eu){
+    const u=(window.__users||[]).find(x=>x.id==eu.dataset.eu);if(!u)return;
+    const m=modal({title:`編輯帳號：${u.username}`,body:userForm(u),
+      actions:`<button class="btn btn-o" data-x2>取消</button><button class="btn btn-g" id="u-ok">儲存</button>`});
+    m.root.querySelector('[data-x2]').onclick=m.close;
+    m.root.querySelector('#u-ok').onclick=async()=>{
+      const pw=m.root.querySelector('#u-p').value;
+      const payload={display:m.root.querySelector('#u-d').value,role:m.root.querySelector('#u-r').value,
+        active:m.root.querySelector('#u-a').value==='1'};
+      if(pw)payload.password=pw;
+      try{await api(`/users/${u.id}`,{method:'PATCH',body:JSON.stringify(payload)});
+        m.close();toast('已更新');loadUsers();}
+      catch(err){toast(err.message);}
+    };
+  }
+  if(du){
+    const u=(window.__users||[]).find(x=>x.id==du.dataset.du);if(!u)return;
+    if(!confirm(`確定要刪除帳號「${u.username}」嗎？此動作無法復原。`))return;
+    try{await api(`/users/${u.id}`,{method:'DELETE'});toast('帳號已刪除');loadUsers();}
+    catch(err){toast(err.message);}
+  }
+});
+
+/* ============ 修改密碼 ============ */
+$('#btn-pw').onclick=()=>{
+  closeMenu();
+  const m=modal({title:'修改密碼',
+    body:`<div class="f"><label for="p-c">目前密碼</label><input id="p-c" type="password" autocomplete="current-password"></div>
+      <div class="f"><label for="p-n">新密碼</label><input id="p-n" type="password" placeholder="至少 8 個字元" autocomplete="new-password"></div>
+      <div class="f" style="margin-bottom:0"><label for="p-n2">確認新密碼</label><input id="p-n2" type="password" autocomplete="new-password"></div>`,
+    actions:`<button class="btn btn-o" data-x2>取消</button><button class="btn btn-g" id="p-ok">確認修改</button>`});
+  m.root.querySelector('[data-x2]').onclick=m.close;
+  m.root.querySelector('#p-ok').onclick=async()=>{
+    const n=m.root.querySelector('#p-n').value;
+    if(n!==m.root.querySelector('#p-n2').value)return toast('兩次輸入的新密碼不一致');
+    try{await api('/password',{method:'POST',body:JSON.stringify({current:m.root.querySelector('#p-c').value,next:n})});
+      m.close();toast('密碼已更新，其他裝置已自動登出');}
+    catch(err){toast(err.message);}
+  };
+};
+
+/* ============ 啟動 ============ */
+(async()=>{
+  try{const d=await api('/me');ME=d.user;enter();}
+  catch{showLogin();}
+})();
+</script>
+</body>
+</html>
