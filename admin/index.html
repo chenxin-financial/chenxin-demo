@@ -614,12 +614,14 @@ $('#recent').addEventListener('click',e=>{
 /* ---- 近 14 日長條圖（單一序列，不需圖例；標題已說明內容） ---- */
 function drawChart(daily,todayStr){
   const days=[],map=Object.fromEntries(daily.map(r=>[r.d,r.c]));
-  const base=new Date(todayStr+'T00:00:00');
+  // 一律用 UTC 運算：todayStr 已是台灣時間的日期字串，若用本地時間解析，
+  // 在 UTC+8 會被 toISOString() 推回前一天，整組索引就對不上了。
+  const base=new Date(todayStr+'T00:00:00Z');
   for(let i=13;i>=0;i--){
-    const dt=new Date(base);dt.setDate(dt.getDate()-i);
+    const dt=new Date(base);dt.setUTCDate(dt.getUTCDate()-i);
     const key=dt.toISOString().slice(0,10);
-    days.push({key,c:map[key]||0,md:`${dt.getMonth()+1}/${dt.getDate()}`,
-      wd:'日一二三四五六'[dt.getDay()]});
+    days.push({key,c:map[key]||0,md:`${dt.getUTCMonth()+1}/${dt.getUTCDate()}`,
+      wd:'日一二三四五六'[dt.getUTCDay()]});
   }
   const peak=Math.max(1,...days.map(d=>d.c));
   const top=peak<=4?peak:Math.ceil(peak/4)*4;      // 讓刻度落在整數
